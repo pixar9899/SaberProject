@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<title>midi test</title>
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
+
+<body>
+	
+	<script src="https://threejs.org/build/three.min.js"></script>
+	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+
+	<script>
+
+		var SCREEN_WIDTH = window.innerWidth;
+		var SCREEN_HEIGHT = window.innerHeight;
+		var aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+
+		var camera, scene, renderer;
+		var container;
+        
+        var clock = new THREE.Clock(), begin = false;
+        var i = 0;
+    
+        var spheres = [];
+
+        var midi;
+        var json = $.getJSON("real.json", function(data) {
+            midi = new GameCreate(data);
+        });
+
+        class GameCreate {
+            constructor(data) {
+                this.node = data.tracks[1].notes;
+            }            
+        }
+
+        class Sphere{
+            constructor() {
+                this.sphere = new THREE.Mesh(
+                    new THREE.SphereGeometry(5, 32, 32),
+                    new THREE.MeshBasicMaterial({color: "black"})
+                );
+                scene.add(this.sphere);
+            }
+
+            move() {
+                this.sphere.position.z += 1;
+            }
+        }
+
+		init();
+		animate();
+
+		function init() {
+
+			container = document.createElement('div');
+			document.body.appendChild(container);
+
+			// scene
+
+			scene = new THREE.Scene();
+
+			// camera
+
+			camera = new THREE.PerspectiveCamera(30, aspect, 1, 10000);
+			camera.position.set(0, 100, 100);
+
+			// renderer
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+			renderer.setClearColor(0xcce0ff);
+
+			container.appendChild(renderer.domElement);
+
+			// controls
+
+			let controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+			// grid
+
+			let gridXZ = new THREE.GridHelper(200, 20, 'red', 'black');
+			scene.add(gridXZ)
+
+			// resize
+
+            window.addEventListener('resize', onWindowResize, false);
+            
+            console.log(clock);
+		}
+
+		function onWindowResize() {
+
+			SCREEN_WIDTH = window.innerWidth;
+			SCREEN_HEIGHT = window.innerHeight;
+
+			camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+		}
+
+		function animate() {
+            if(midi != undefined && begin == false){
+                begin = true;
+                clock.start();
+            }
+            else if(begin == true){
+                var elapsedTime = clock.getElapsedTime();
+                if(i < midi.node.length){
+                   if(elapsedTime > midi.node[i].time){
+                        console.log(elapsedTime);
+                        spheres.push(new Sphere());
+                        i++;
+                    }
+                }
+            }
+            
+            spheres.forEach(function (s) {
+				s.move();
+			});
+
+			requestAnimationFrame(animate);
+			render();
+
+		}
+
+		function render() {
+
+			renderer.render(scene, camera);
+
+		}
+
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<title>Cylinder Sphere Bomb</title>
+	<link type="text/css" rel="stylesheet" href="main.css">
+	<style>
+		body {
+			background-color: #cce0ff;
+			color: #000;
+		}
+		a {
+			color: #08f;
+		}
+	</style>
+</head>
+
+<body>
+	
+	<script src="https://threejs.org/build/three.min.js"></script>
+	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+	<script src="https://threejs.org/examples/js/controls/TransformControls.js"></script>
+
+	<script>
+
+		var SCREEN_WIDTH = window.innerWidth;
+		var SCREEN_HEIGHT = window.innerHeight;
+		var aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+
+		var camera, scene, renderer;
+		var container;
+
+		var bombs = [];
+		var sabers = [];
+		var spheres = [];
+
+		class Saber {
+			constructor() {
+				this.object = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 20, 32), new THREE.MeshBasicMaterial({ color: "white", side: THREE.DoubleSide, transparent: true, opacity: 0.6 }));
+				this.radius = 1;
+				this.group = new THREE.Group();
+				this.group.add(this.object);
+				this.group.position.x = 10;
+				scene.add(this.group);
+
+				let geometry = new THREE.SphereGeometry(1, 32, 32);
+				let yellow = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+				let red = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+
+				this.dotYellow = new THREE.Mesh(geometry, yellow);
+				this.dotRed = new THREE.Mesh(geometry, red);
+
+				this.group.add(this.dotYellow);
+				this.group.add(this.dotRed);
+
+				this.object.pointTop = this.object.position.clone();
+				this.object.pointTop.y += 10;
+				this.dotYellow.position.copy(this.object.pointTop);
+
+				this.object.pointBottom = this.object.position.clone();
+				this.object.pointBottom.y -= 10;
+				this.dotRed.position.copy(this.object.pointBottom);
+			}
+		}
+
+		class Sphere {
+			constructor() {
+				this.object = new THREE.Mesh(new THREE.SphereGeometry(5, 32, 32), new THREE.MeshBasicMaterial({ color: "black", side: THREE.DoubleSide }));
+				this.object.geometry.computeBoundingBox();
+				this.radius = 5;
+				scene.add(this.object);
+				
+				this.dotWhite = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+				scene.add(this.dotWhite);
+
+				this.bombed = false;
+				this.movementSpeed = 1;
+				this.totalObjects = 10;
+				this.objectSize = 10;
+
+				this.dirs = [];
+
+				let BombGeometry = new THREE.Geometry();
+				for (let i = 0; i < this.totalObjects; i ++) 
+				{ 
+					let vertex = new THREE.Vector3();
+					vertex.x = this.object.position.x;
+					vertex.y = this.object.position.y;
+					vertex.z = this.object.position.z;
+
+					BombGeometry.vertices.push( vertex );
+					this.dirs.push({
+						x:(Math.random() * this.movementSpeed)-(this.movementSpeed/2),
+						y:(Math.random() * this.movementSpeed)-(this.movementSpeed/2),
+						z:(Math.random() * this.movementSpeed)-(this.movementSpeed/2)
+					});
+				}
+				let BombMaterial = new THREE.PointsMaterial( { size: this.objectSize, color: "black" });
+				this.particles = new THREE.Points( BombGeometry, BombMaterial );
+				scene.add( this.particles );
+			}
+
+			intersect() {
+				let point = new THREE.Vector3();
+				point = this.object.position.clone();
+
+				let pointTop = new THREE.Vector3();
+				sabers[0].dotYellow.getWorldPosition(pointTop);
+				let pointBottom = new THREE.Vector3();
+				sabers[0].dotRed.getWorldPosition(pointBottom);
+
+				let line = pointTop.clone().sub(pointBottom.clone());
+				let line2 = point.clone().sub(pointTop.clone());
+				let projectOnLine = line2.projectOnVector(line);
+				let closestPoint = pointTop.clone().add(projectOnLine.clone());
+				this.dotWhite.position.copy(closestPoint);
+
+				let distance = point.distanceTo(closestPoint);
+				let distanceTop = closestPoint.distanceTo(pointTop);
+				let distanceBottom = closestPoint.distanceTo(pointBottom);
+
+				if (distance < (sabers[0].radius + this.radius) && distanceTop < 20 && distanceBottom < 20 && !this.bombed){
+					this.bombed = true;
+					scene.remove(this.object);
+					this.reaction();
+				}
+			}
+
+			reaction() {
+				for(let i = 0; i < this.totalObjects; i++){
+					let particle = this.particles.geometry.vertices[i];
+					particle.x += this.dirs[i].x;
+					particle.y += this.dirs[i].y;
+					particle.z += this.dirs[i].z;
+				}
+				this.particles.geometry.verticesNeedUpdate = true;
+			}
+		}
+
+		init();
+		animate();
+
+		function init() {
+
+			container = document.createElement('div');
+			document.body.appendChild(container);
+
+			// scene
+
+			scene = new THREE.Scene();
+
+			// camera
+
+			camera = new THREE.PerspectiveCamera(30, aspect, 1, 10000);
+			camera.position.set(0, 100, 100);
+
+			// renderer
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+			renderer.setClearColor(0xcce0ff);
+
+			container.appendChild(renderer.domElement);
+
+			// controls
+
+			let controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+			// grid
+
+			let gridXZ = new THREE.GridHelper(200, 20, 'red', 'black');
+			//scene.add(gridXZ)
+
+			// resize
+
+			window.addEventListener('resize', onWindowResize, false);
+
+			// saber
+			sabers.push(new Saber());
+
+			// sphere
+			spheres.push(new Sphere());
+			controlSaber = new THREE.TransformControls( camera, renderer.domElement );
+			controlSaber.addEventListener( 'change', render );
+			controlSaber.addEventListener( 'dragging-changed', function ( event ) {
+				controls.enabled = ! event.value;
+			} );
+			controlSaber.attach( sabers[0].group );
+			scene.add(controlSaber);
+			window.addEventListener('keydown', function (event) {
+				switch (event.keyCode) {
+					case 87: // W
+					case 119: // w
+						controlSaber.setMode("translate");
+						break;
+
+					case 69: // E
+					case 101: // e
+						controlSaber.setMode("rotate");
+						break;
+				}
+			});
+		}
+
+		function onWindowResize() {
+
+			SCREEN_WIDTH = window.innerWidth;
+			SCREEN_HEIGHT = window.innerHeight;
+
+			camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+		}
+
+		function animate() {
+			
+			spheres.forEach(function (s) {
+				s.intersect();
+				if(s.bombed){
+					s.reaction();
+				}
+			});
+
+			requestAnimationFrame(animate);
+			render();
+
+		}
+
+		function render() {
+
+			renderer.render(scene, camera);
+
+		}
+
+	</script>
+</body>
+
+</html>

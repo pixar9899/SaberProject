@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<title>Line Cylinder Collision Detection</title>
+	<link type="text/css" rel="stylesheet" href="main.css">
+	<style>
+		body {
+			background-color: #cce0ff;
+			color: #000;
+		}
+		a {
+			color: #08f;
+		}
+	</style>
+</head>
+
+<body>
+	<div id="info">
+		<h2>"W" translate | "E" rotate | "R" reset</h2>
+	</div>
+	
+	<script src="https://threejs.org/build/three.min.js"></script>
+	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
+	<script src="https://threejs.org/examples/js/controls/TransformControls.js"></script>
+	<script src="https://threejs.org/examples/js/libs/dat.gui.min.js"></script>
+	
+	<script>
+
+var SCREEN_WIDTH = window.innerWidth;
+		var SCREEN_HEIGHT = window.innerHeight;
+		var aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+		var camera, scene, renderer;
+		var container;
+		var control, control2, control3;
+		var group, Point;
+		var newP, newQ;
+
+		init();
+		animate();
+
+		function init() {
+
+			container = document.createElement('div');
+			document.body.appendChild(container);
+
+			// scene
+
+			scene = new THREE.Scene();
+
+			// camera
+
+			camera = new THREE.PerspectiveCamera(30, aspect, 1, 10000);
+			camera.position.set(0, 100, 100);
+
+			// renderer
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+			renderer.setClearColor(0xcce0ff);
+
+			container.appendChild(renderer.domElement);
+
+			// controls
+
+			let orbit = new THREE.OrbitControls(camera, renderer.domElement);
+			orbit.update();
+			orbit.addEventListener( 'change', render );
+
+			// grid
+
+			let gridXZ = new THREE.GridHelper(200, 20, 'red', 'white');
+			scene.add(gridXZ)
+
+			// resize
+
+			window.addEventListener('resize', onWindowResize, false);
+
+			// trans control
+			control = new THREE.TransformControls( camera, renderer.domElement );
+			control.addEventListener( 'change', render );
+			control.addEventListener( 'dragging-changed', function ( event ) {
+				orbit.enabled = ! event.value;
+			} );
+
+			control2 = new THREE.TransformControls( camera, renderer.domElement );
+			control2.addEventListener( 'change', render );
+			control2.addEventListener( 'dragging-changed', function ( event ) {
+				orbit.enabled = ! event.value;
+			} );
+
+			control3 = new THREE.TransformControls( camera, renderer.domElement );
+			control3.addEventListener( 'change', render );
+			control3.addEventListener( 'dragging-changed', function ( event ) {
+				orbit.enabled = ! event.value;
+			} );
+
+			window.addEventListener('keydown', function (event) {
+				switch (event.keyCode) {
+
+					case 82: // R
+					case 114: // r
+						group.position.set(0, 0, 0);
+						dotA.position.set(-10, 10, 10);
+						dotB.position.set(9, 0, 0);
+						break;
+
+					case 87: // W
+					case 119: // w
+						control.setMode("translate");
+						break;
+
+					
+					case 69: // E
+					case 101: // e
+						control.setMode("rotate");
+						break;
+
+				}
+			});
+
+			// group
+			group = new THREE.Group();
+			scene.add(group);
+			control.attach( group );
+			scene.add(control);
+
+			// Saber
+			Saber = new THREE.Mesh (new THREE.CylinderGeometry( 4, 4, 20, 32 ), new THREE.MeshBasicMaterial({color: "white", side: THREE.DoubleSide, transparent: true, opacity: 0.6}));
+			group.add (Saber);
+			//group.position.x = 10;
+			var geometry = new THREE.SphereGeometry( 0.5, 32, 32 );
+			var material = new THREE.MeshBasicMaterial( {color: 0x000000} );
+
+			var P = Saber.position.clone();
+			P.y -= 10;
+			P.applyEuler( Saber.rotation );
+			dotP = new THREE.Mesh( geometry, material );
+			dotP.position.copy(P);
+			group.add(dotP);
+			scene.updateMatrixWorld(true);
+			newP = new THREE.Vector3();
+			dotP.getWorldPosition(newP);
+
+			var Q = Saber.position.clone();
+			Q.y += 10;
+			Q.applyEuler( Saber.rotation );
+			dotQ = new THREE.Mesh( geometry, material );
+			dotQ.position.copy(Q);
+			group.add(dotQ);
+			scene.updateMatrixWorld(true);
+			newQ = new THREE.Vector3();
+			dotQ.getWorldPosition(newQ);
+
+			var material2 = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
+			dotA = new THREE.Mesh( geometry, material2 );
+			dotA.position.copy(new THREE.Vector3( -10, 10, 10 ));
+			scene.add(dotA);
+			control2.attach( dotA );
+			scene.add(control2);
+			var A = dotA.position.clone();
+
+			dotB = new THREE.Mesh( geometry, material2 );
+			dotB.position.copy(new THREE.Vector3( 9, 0, 0 ));
+			scene.add(dotB);
+			control3.attach( dotB );
+			scene.add(control3);
+			var B = dotB.position.clone();
+
+			points = [];
+			points.push( dotA.position );
+			points.push( dotB.position );
+
+			var geometryLine = new THREE.BufferGeometry().setFromPoints( points );
+			var materialLine = new THREE.MeshBasicMaterial( {color: "black"} );
+			line = new THREE.Line( geometryLine, materialLine );
+			scene.add( line );
+
+		}
+
+		function intersect(A, B, P, Q, r){
+			var d = Q.clone().sub(P.clone());
+			var m = A.clone().sub(P.clone());
+			var n = B.clone().sub(A.clone());
+			var md = m.clone().dot(d.clone());
+			var nd = n.clone().dot(d.clone());
+			var dd = d.clone().dot(d.clone());
+			// Test if segment fully outside either endcap of cylinder
+			if (md < 0.0 && md + nd < 0.0) return 0; // Segment outside ’p’ side of cylinder
+			if (md > dd && md + nd > dd) return 0; // Segment outside ’q’ side of cylinder
+			var nn = n.clone().dot(n.clone());
+			var mn = m.clone().dot(n.clone());
+			var a = dd * nn - nd * nd;
+			var k = m.clone().dot(m.clone()) - r * r;
+			var c = dd * k - md * md;
+			if(Math.abs(a) < 0.001){
+				// Segment runs parallel to cylinder axis
+				if(c > 0.0) return 0; // ’a’ and thus the segment lie outside cylinder
+				// Now known that segment intersects cylinder; figure out how it intersects
+				if(md < 0.0) t = -mn / nn; // Intersect segment against ’p’ endcap
+				else if(md > dd) t = (nd - mn) / nn; // Intersect segment against ’q’ endcap
+				else t = 0; // ’a’ lies inside cylinder
+				return 1;
+			}
+			var b = dd * mn - nd * md;
+			var discr = b * b - a * c;
+			if (discr < 0.0) return 0; // No real roots; no intersection
+			t = ( -b - Math.sqrt(discr) ) / a;
+			if (t < 0.0 || t > 1.0)
+				return 0;
+			if (md + t * nd < 0.0) {
+				// Intersection outside cylinder on ’p’ side
+				if (nd <= 0.0) return 0; // Segment pointing away from endcap
+				t = -md / nd;
+				// Keep intersection if Dot(S(t) - p, S(t) - p) <= r∧2
+				return k + 2 * t * (mn + t * nn) <= 0.0;
+				} else if (md + t * nd > dd) {
+				// Intersection outside cylinder on ’q’ side
+				if (nd >= 0.0) return 0; // Segment pointing away from endcap
+				t = (dd - md) / nd;
+				// Keep intersection if Dot(S(t) - q, S(t) - q) <= r∧2
+				return k + dd - 2 * md + t * (2 * (mn - nd) + t * nn) <= 0.0;
+			}
+			// Segment intersects cylinder between the endcaps; t is correct
+			return 1;
+		}
+
+		function onWindowResize() {
+
+			SCREEN_WIDTH = window.innerWidth;
+			SCREEN_HEIGHT = window.innerHeight;
+
+			camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+		}
+
+		function animate() {
+			
+			line.geometry.attributes.position.array[0] = dotA.position.x;
+			line.geometry.attributes.position.array[1] = dotA.position.y;
+			line.geometry.attributes.position.array[2] = dotA.position.z;
+			line.geometry.attributes.position.array[3] = dotB.position.x;
+			line.geometry.attributes.position.array[4] = dotB.position.y;
+			line.geometry.attributes.position.array[5] = dotB.position.z;
+			line.geometry.attributes.position.needsUpdate = true;
+
+			dotP.getWorldPosition(newP);
+			dotQ.getWorldPosition(newQ);
+
+			if(intersect(dotA.position.clone(), dotB.position.clone(), newP, newQ, 4))
+				Saber.material.color = new THREE.Color ('red');
+			else
+				Saber.material.color = new THREE.Color ('white');
+
+			requestAnimationFrame(animate);
+			render();
+
+		}
+
+		function render() {
+
+			renderer.render(scene, camera);
+
+		}
+
+	</script>
+</body>
+
+</html>
