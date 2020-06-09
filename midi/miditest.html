@@ -8,7 +8,11 @@
 </head>
 
 <body>
-	
+
+	<div id="overlay">
+		<button id="startButton">Play</button>
+	</div>
+
 	<script src="https://threejs.org/build/three.min.js"></script>
 	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 	<script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
@@ -27,11 +31,8 @@
     
         var spheres = [];
 
-        var midi;
-        var json = $.getJSON("test.json", function(data) {
-            midi = new GameCreate(data);
-        });
-
+        var midi, audio;
+        
         class GameCreate {
             constructor(data) {
                 this.node = data.tracks[1].notes;
@@ -52,10 +53,13 @@
             }
         }
 
-		init();
-		animate();
+		var startButton = document.getElementById( 'startButton' );
+		startButton.addEventListener( 'click', init );
 
 		function init() {
+
+			var overlay = document.getElementById( 'overlay' );
+			overlay.remove();
 
 			container = document.createElement('div');
 			document.body.appendChild(container);
@@ -91,6 +95,17 @@
             window.addEventListener('resize', onWindowResize, false);
             
             console.log(clock);
+
+			var audioLoader = new THREE.AudioLoader();
+			var listener = new THREE.AudioListener();
+			audioLoader.load( 'test.mp3', function ( buffer ) {				
+				audio = new THREE.PositionalAudio( listener );
+				audio.setBuffer( buffer );
+				var json = $.getJSON("test.json", function(data) {
+					midi = new GameCreate(data);
+					animate();
+				});
+			});
 		}
 
 		function onWindowResize() {
@@ -108,6 +123,7 @@
 		function animate() {
             if(midi != undefined && begin == false){
                 begin = true;
+				audio.play();
                 clock.start();
             }
             else if(begin == true){
