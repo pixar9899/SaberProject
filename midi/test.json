@@ -76,15 +76,6 @@
       "name": "New Instrument",
       "channelNumber": 0,
       "isPercussion": false
-    },
-    {
-      "startTime": 0,
-      "duration": 0,
-      "length": 0,
-      "notes": [],
-      "controlChanges": {},
-      "id": 2,
-      "name": "New Track"
     }
   ]
 }

@@ -28,9 +28,9 @@ canvas {
 
 #info {
 	position: absolute;
-	top: 0px;
+	top: 45%;
+	font-size:1.2cm;
 	width: 100%;
-	padding: 10px;
 	box-sizing: border-box;
 	text-align: center;
 	-moz-user-select: none;
