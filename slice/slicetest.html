@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<title>slice test</title>
+	<link type="text/css" rel="stylesheet" href="main.css">
+</head>
+
+<body>
+
+	<script src="js/three.min.js"></script>
+	<script src="js/jquery-2.1.4.min.js"></script>
+	<script src="js/OrbitControls.js"></script>
+	<script src="js/slice.js"></script>
+	<script src="js/dat.gui.min.js"></script>
+	<script src="js/KeyboardState.js"></script>
+
+	<script>
+
+		var SCREEN_WIDTH = window.innerWidth;
+		var SCREEN_HEIGHT = window.innerHeight;
+		var aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+
+		var camera, scene, renderer;
+		var container;
+		var keyboard = new KeyboardState();
+		var Sphere, Vector;
+		class SphereSlice {
+			constructor(plane) {
+				this.SphereGeo = new THREE.SphereGeometry(10, 32, 32);
+				
+				this.slice(plane);
+				this.PlaneHelper(plane);
+
+				scene.add( this.Sphere1 );
+				scene.add( this.Sphere2 );
+				scene.add( this.planeHelper );
+			}
+			
+			PlaneHelper(plane){
+              	var geom = new THREE.PlaneGeometry( 100, 100, 10, 10 );
+              	var material = new THREE.MeshBasicMaterial({
+                	color: '#333',
+                	side: THREE.DoubleSide,
+                	wireframe: true
+              	});
+              	this.planeHelper = new THREE.Mesh( geom, material );
+              	this.planeHelper.lookAt(plane.normal);
+              	this.planeHelper.translateOnAxis(
+                	new THREE.Vector3(1, 0, 0).cross(plane.normal).normalize(),
+                	plane.constant * -1
+              	);
+			}
+
+			slice(plane) {
+				let SphereGeo1 = sliceGeometry(this.SphereGeo, plane, false, "BACK");
+				let SphereGeo2 = sliceGeometry(this.SphereGeo, plane, false, "FRONT");
+				let SphereMat1 = new THREE.MeshBasicMaterial({
+					side: THREE.DoubleSide,
+					color: "yellow"
+				});
+				let SphereMat2 = new THREE.MeshBasicMaterial({
+					side: THREE.DoubleSide,
+					color: "red"
+				});
+				this.Sphere1 = new THREE.Mesh( SphereGeo1, SphereMat1 );
+				this.Sphere2 = new THREE.Mesh( SphereGeo2, SphereMat2 );
+			}
+
+			Up(){
+				this.pos = new THREE.Vector3(0, 1, 0);
+				var m = new THREE.Matrix4();
+				m.setPosition(this.pos);
+				this.SphereGeo.applyMatrix(m);
+			}
+			Down(){
+				this.pos = new THREE.Vector3(0, -1, 0);
+				var m = new THREE.Matrix4();
+				m.setPosition(this.pos);
+				this.SphereGeo.applyMatrix(m);
+			}
+			Left(){
+				this.pos = new THREE.Vector3(-1, 0, 0);
+				var m = new THREE.Matrix4();
+				m.setPosition(this.pos);
+				this.SphereGeo.applyMatrix(m);
+			}
+			Right(){
+				this.pos = new THREE.Vector3(1, 0, 0);
+				var m = new THREE.Matrix4();
+				m.setPosition(this.pos);
+				this.SphereGeo.applyMatrix(m);
+			}
+
+			update(plane) {
+
+				scene.remove( this.Sphere1 );
+				scene.remove( this.Sphere2 );
+				scene.remove( this.planeHelper );
+				
+				this.slice(plane);
+				this.PlaneHelper(plane);
+				
+				scene.add( this.planeHelper );
+				scene.add( this.Sphere1 );
+				scene.add( this.Sphere2 );
+			}
+		}
+
+		init();
+		animate();
+		
+		function init() {
+
+			container = document.createElement('div');
+			document.body.appendChild(container);
+
+			// scene
+
+			scene = new THREE.Scene();
+
+			// camera
+
+			camera = new THREE.PerspectiveCamera(30, aspect, 1, 10000);
+			camera.position.set(0, 100, 100);
+
+			// renderer
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+			renderer.setClearColor(0xcce0ff);
+
+			container.appendChild(renderer.domElement);
+
+			// controls
+
+			let controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+			// grid
+
+			let gridXZ = new THREE.GridHelper(200, 20, 'red', 'black');
+			//scene.add(gridXZ)
+
+			// resize
+
+            window.addEventListener('resize', onWindowResize, false);
+			
+			Vector = new function () {
+				this.x = 1;
+				this.y = 0;
+				this.z = 0;
+	       	};
+			var gui = new dat.GUI();
+			gui.add(Vector, 'x', -10, 10);
+			gui.add(Vector, 'y', -10, 10);
+			gui.add(Vector, 'z', -10, 10);
+
+			Sphere = new SphereSlice( new THREE.Plane(new THREE.Vector3(1, 0, 0), 0) );
+
+		}
+
+		function onWindowResize() {
+
+			SCREEN_WIDTH = window.innerWidth;
+			SCREEN_HEIGHT = window.innerHeight;
+
+			camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+		}
+		
+		function animate() {
+			if (keyboard.pressed("W")) {
+				Sphere.Up();
+			}
+			if (keyboard.pressed("S")) {
+				Sphere.Down();
+			}
+			if (keyboard.pressed("A")) {
+				Sphere.Left();
+			}
+			if (keyboard.pressed("D")) {
+				Sphere.Right();
+			}
+			Sphere.update( new THREE.Plane(new THREE.Vector3(Vector.x, Vector.y, Vector.z), 0) );
+			
+			keyboard.update();
+
+			requestAnimationFrame(animate);
+			render();
+
+		}
+
+		function render() {
+
+			renderer.render(scene, camera);
+
+		}
+
+	</script>
+</body>
+
+</html>
