@@ -3,33 +3,26 @@
 <html>
 
 <head>
-	<title>Saber Demo</title>
+	<title>Midi Demo</title>
 	<link type="text/css" rel="stylesheet" href="main.css">
 
 	<link rel="icon" href="/img/Lightsaber.png"/>
 </head>
 
 <body>
-
-	<div id="overlay">
-		<button id="startButton">Play</button>
-	</div>
-	<div id="info">
-		<div id="counts"></div>
-	</div>
     
 	<script src="js/three.min.js"></script>
 	<script src="js/jquery-2.1.4.min.js"></script>
 	<script src="js/OrbitControls.js"></script>
-	<script src="js/KeyboardState.js"></script>
 	<script src="js/midiplayer.js"></script>
 	<script src="js/soundfont-player.min.js"></script>
-
-	<script src="./Saber.js"></script>
-	<script src="./Sphere.js"></script>
-	<script src="./Midi.js"></script>
-
-	<script src="./Main.js"></script>
+	
+	<div id="info">
+		<h2>Play MIDI</h2>
+		<input type="file" onchange="loadFile()"/>
+	</div>
+		
+	<script src="./MAIN.js"></script>
 
 </body>
 

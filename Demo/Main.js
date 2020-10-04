@@ -58,7 +58,7 @@ function init() {
 	let CountDown = ['3', '2', '1', 'GO']
 	let audioLoader = new THREE.AudioLoader();
 	let listener = new THREE.AudioListener();
-	audioLoader.load( 'test.mp3', function ( buffer ) {				
+	audioLoader.load( 'test.mp3', function ( buffer ) {
 		audio = new THREE.PositionalAudio( listener );
 		audio.setBuffer( buffer );
 		let json = $.getJSON("test.json", function(data) {
@@ -102,7 +102,7 @@ function animate() {
 		let delta = clock.getDelta() * 50;
 		mySpheres.forEach(function (s) {
 			s.update( delta );
-			if(s.sphere.position.z > -10 && s.sphere.position.z < 10){ // 簡單判定
+			if(s.group.position.z > -10 && s.group.position.z < 10){ // 簡單判定
 				let pointTop = new THREE.Vector3();
 				mySaber.dotTop.getWorldPosition(pointTop);
 				let pointBot = new THREE.Vector3();

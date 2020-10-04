@@ -21,6 +21,7 @@
 	<script src="js/jquery-2.1.4.min.js"></script>
 	<script src="js/OrbitControls.js"></script>
 	<script src="js/KeyboardState.js"></script>
+	<script src="https://unpkg.com/@tonejs/midi"></script>
 
 	<script>
 
@@ -42,7 +43,7 @@
 
         class GameCreate {
             constructor(data) {
-                this.node = data.tracks[1].notes;
+                this.node = data.tracks[0].notes;
             }            
         }
 
@@ -104,14 +105,24 @@
             );
 			scene.add(people);
 			people.position.set(0, 0, 0);
-			var test = ['3', '2', '1', 'GO']
+			
+			
+			var test = ['3', '2', '1', 'GO'];
+			
 			var audioLoader = new THREE.AudioLoader();
 			var listener = new THREE.AudioListener();
-			audioLoader.load( 'test.mp3', function ( buffer ) {				
+			audioLoader.load( './happy_birthday.mp3', function ( buffer ) {				
 				audio = new THREE.PositionalAudio( listener );
 				audio.setBuffer( buffer );
 				var json = $.getJSON("test.json", function(data) {
-					midi = new GameCreate(data);
+					// load a midi file in the browser
+					let midi_loader = Midi.fromUrl("./happy_birthday.mid");
+					//get the tracks
+					midi_loader.then((v) => {
+						midi = new GameCreate(v);
+					});
+					console.log(midi_loader);
+
 					setTimeout(animate, 4000);
 					for( var i = 0; i <= 4; i++ ) {
 						(function(x){
