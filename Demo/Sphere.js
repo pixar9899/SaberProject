@@ -1,17 +1,29 @@
-class Sphere{
-	constructor(time) {
+const BombStatus = Object.freeze({
+	"未碰撞": 0,
+	"碰撞中": 1,
+	"碰撞完畢": 2,
+	"反應完畢": 3,
+	"紀錄完畢": 4
+})
+class Sphere {
+	constructor(time, score = 10) {
+		this.score = score;
 		this.group = this.makeGroup();
-		this.group.position.set(0, 0, time * 50);
+		this.group.position.set(0, 0, time * TIME_SCALE);
 		scene.add(this.group);
-		
-		this.flag = '未碰撞';
+
+		this.flag = BombStatus.未碰撞
 		this.points = [];
+
+		this.style = MovingStyle.leftright;
+
+		this.calcPos = [];
 	}
 
 	makeGroup() {
 		let SphereGroup = new THREE.Group();
 		SphereGroup.name = 'SphereGroup';
-		
+
 		this.sphere = new THREE.Mesh(
 			new THREE.SphereGeometry(5, 32, 32),
 			new THREE.MeshBasicMaterial({
@@ -22,40 +34,52 @@ class Sphere{
 			})
 		);
 		SphereGroup.add(this.sphere);
-		
+
 		return SphereGroup;
 	}
-	update(delta) {
+
+	moving(elapsed) {
+		switch (this.style) {
+			case MovingStyle.updown:
+				this.group.position.y = Math.sin(elapsed * 2) * 15;
+			case MovingStyle.leftright:
+				this.group.position.x = Math.sin(elapsed * 2) * 15;
+		}
+	}
+
+	update(delta, elapsed) {
+		this.moving(elapsed);
 		this.group.position.z -= delta;
 	}
 
 	collision(pointTop, pointBot) {
 		let point = new THREE.Vector3();
 		point = this.group.position.clone();
-		
+
 		let line = pointTop.clone().sub(pointBot.clone());
 		let line2 = point.clone().sub(pointTop.clone());
 		let projectOnLine = line2.projectOnVector(line);
 		let closestPoint = pointTop.clone().add(projectOnLine.clone());
-		
+
 		let DistanceToSaber = closestPoint.distanceTo(this.group.position);
 		let DistanceToTop = closestPoint.distanceTo(pointTop);
 		let DistanceToBot = closestPoint.distanceTo(pointBot);
-		
+
 		if (DistanceToTop < 20 && DistanceToBot < 20) {
-			if(DistanceToSaber <= 5.0 && this.flag == '未碰撞') {
-				this.flag = '碰撞中';
+			if (DistanceToSaber <= 5.0 && this.flag == BombStatus.未碰撞) {
+				this.flag = BombStatus.碰撞中;
 				this.points[0] = this.group.worldToLocal(closestPoint);
 			}
-			if(DistanceToSaber >= 5.0 && this.flag == '碰撞中') {
-				this.flag = '碰撞完畢';
+			if (DistanceToSaber >= 5.0 && this.flag == BombStatus.碰撞中) {
+				this.flag = BombStatus.碰撞完畢;
 				this.points[1] = this.group.worldToLocal(closestPoint);
 				console.log(this.points[1]);
 				console.log(this.group.worldToLocal(closestPoint));
 			}
-			if(this.flag == '碰撞完畢') {
-				this.flag = '反應完畢';
+			if (this.flag == BombStatus.碰撞完畢) {
+				this.flag = BombStatus.反應完畢;
 				this.reaction();
+				this.historyPos = this.sphere.position.clone();
 				this.group.remove(this.sphere);
 			}
 		}
@@ -63,24 +87,13 @@ class Sphere{
 
 	reaction() {
 		let angle = this.points[0].angleTo(this.points[1]);
-		
-		let Part1 = {
-			radius: 5,
-			widthSegments: 32,
-			heightSegments: 32,
-			phiStart: 0,
-			phiLength: Math.PI * 2,
-			thetaStart: 0,
-			thetaLength: angle / 2
-		};
 		let SpherePart1 = new THREE.Mesh(
-			new THREE.SphereGeometry(Part1.radius,
-				Part1.widthSegments,
-				Part1.heightSegments,
-				Part1.phiStart,
-				Part1.phiLength,
-				Part1.thetaStart,
-				Part1.thetaLength),
+			// radius, widthSegments, heightSegments, phiStart, phiLength
+			// thetaStart, thetaLength
+			new THREE.SphereGeometry(5, 32, 32, 0, Math.PI * 2,
+				0,
+				angle / 2
+			),
 			new THREE.MeshBasicMaterial({
 				color: "white",
 				side: THREE.DoubleSide,
@@ -88,25 +101,14 @@ class Sphere{
 				opacity: 0.6
 			})
 		);
-		this.group.add( SpherePart1 );
-
-		let Part2 = {
-			radius: 5,
-			widthSegments: 32,
-			heightSegments: 32,
-			phiStart: 0,
-			phiLength: Math.PI * 2,
-			thetaStart: angle / 2,
-			thetaLength: Math.PI
-		};
+		this.group.add(SpherePart1);
 		let SpherePart2 = new THREE.Mesh(
-			new THREE.SphereGeometry(Part2.radius,
-				Part2.widthSegments,
-				Part2.heightSegments,
-				Part2.phiStart,
-				Part2.phiLength,
-				Part2.thetaStart,
-				Part2.thetaLength),
+			// radius, widthSegments, heightSegments, phiStart, phiLength
+			// thetaStart, thetaLength
+			new THREE.SphereGeometry(5, 32, 32, 0, Math.PI * 2,
+				angle / 2,
+				(2 * Math.PI - angle) / 2
+			),
 			new THREE.MeshBasicMaterial({
 				color: "black",
 				side: THREE.DoubleSide,
@@ -114,6 +116,6 @@ class Sphere{
 				opacity: 0.6
 			})
 		);
-		this.group.add( SpherePart2 );
+		this.group.add(SpherePart2);
 	}
 }
