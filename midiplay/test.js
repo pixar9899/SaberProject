@@ -17,9 +17,9 @@ var ticks = [];
 
 for (let i = 0; i < Player.getEvents()[1].length; i++){
 	var node = Player.getEvents()[1][i];
-	console.log(node);
+	console.log(Player);
 	
-	if(node.name == "Set Tempo"){
+	if(Player.getEvents().name == "Set Tempo"){
 		//console.log(node);
 		tempo = node.data;
 	}
@@ -38,5 +38,5 @@ for (let i = 0; i < Player.getEvents()[1].length; i++){
 }
 
 for(let i = 0; i < ticks.length; i++){
-	console.log(ticks[i]);
+	//console.log(ticks[i]);
 }

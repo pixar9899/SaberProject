@@ -1,7 +1,7 @@
 body {
 	margin: 0;
-	background-color: #000;
-	color: #fff;
+	background-color: #cce0ff;
+	color: #000;
 	font-family: Monospace;
 	font-size: 13px;
 	line-height: 24px;
@@ -9,7 +9,7 @@ body {
 }
 
 a {
-	color: #ff0;
+	color: #08f;
 	text-decoration: none;
 }
 
@@ -28,9 +28,9 @@ canvas {
 
 #info {
 	position: absolute;
-	top: 45%;
-	font-size:1.2cm;
+	top: 0px;
 	width: 100%;
+	padding: 10px;
 	box-sizing: border-box;
 	text-align: center;
 	-moz-user-select: none;
@@ -59,26 +59,29 @@ a, button, input, select {
 	top: 0;
 	left: 0;
 	width: 100%;
-	height: 100%;
+	height:100%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: rgba(0,0,0,0.7);
+	opacity: 1;
+	background-color: #000000;
+	color: #ffffff;
 }
 
-	#overlay button {
-		background: #ffffff;
-		border: 0;
-		color: #000000;
-		padding: 16px 20px;
-		text-transform: uppercase;
-		cursor: pointer;
-	}
+#overlay > div {
+	text-align: center;
+}
 
-#notSupported {
-	width: 50%;
-	margin: auto;
-	background-color: #f00;
-	margin-top: 20px;
-	padding: 10px;
+#overlay > div > button {
+	height: 20px;
+	background: transparent;
+	color: #ffffff;
+	outline: 1px solid #ffffff;
+	border: 0px;
+	cursor: pointer;
+}
+
+#overlay > div > p {
+	color: #777777;
+	font-size: 12px;
 }
