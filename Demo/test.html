@@ -73,7 +73,7 @@
 
             window.addEventListener('resize', onWindowResize, false);
             mySaber = new Saber();
-
+            mySaber.group.rotation.set(0.314,0,0);
             for (let i = 0; i < 1; i++) {
                 mySpheres.push(new Sphere());
                 let pos = randPos(50);

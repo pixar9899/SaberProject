@@ -63,17 +63,10 @@ function init() {
 	let CountDown = ['3', '2', '1', 'GO']
 	let audioLoader = new THREE.AudioLoader();
 	let listener = new THREE.AudioListener();
-<<<<<<< HEAD
 	audioLoader.load( 'test.mp3', function ( buffer ) {
 		audio = new THREE.PositionalAudio( listener );
 		audio.setBuffer( buffer );
 		let json = $.getJSON("test.json", function(data) {
-=======
-	audioLoader.load('test.mp3', function (buffer) {
-		audio = new THREE.PositionalAudio(listener);
-		audio.setBuffer(buffer);
-		let json = $.getJSON("test.json", function (data) {
->>>>>>> 00f8a7afa4ca964d8495edd4a5ae6b4a48162eeb
 			midi = new GameCreate(data);
 			setTimeout(animate, 4000);
 			for (let i = 0; i <= 4; i++) {
@@ -111,21 +104,12 @@ function animate() {
 		});
 		audio.play();
 	}
-<<<<<<< HEAD
-	else if(begin && !pause){
-		let delta = clock.getDelta() * 50;
-		mySpheres.forEach(function (s) {
-			s.update( delta );
-			if(s.group.position.z > -10 && s.group.position.z < 10){ // 簡單判定
-				let pointTop = new THREE.Vector3();
-=======
 	else if (begin && !pause) {
 		let delta = clock.getDelta();
 		elapsed += delta;
 		mySpheres.forEach((s, idx) => {
 			s.update(delta * TIME_SCALE, elapsed);
 			if (s.group.position.z > -10 && s.group.position.z < 10) { // 簡單判定
->>>>>>> 00f8a7afa4ca964d8495edd4a5ae6b4a48162eeb
 				mySaber.dotTop.getWorldPosition(pointTop);
 				mySaber.dotBot.getWorldPosition(pointBot);
 				s.collision(pointTop, pointBot);

@@ -74,7 +74,7 @@ class Sphere {
 				this.flag = BombStatus.碰撞完畢;
 				this.points[1] = this.group.worldToLocal(closestPoint);
 			}
-			if (this.flag == BombStatus.碰撞完畢) {
+			else if (this.flag == BombStatus.碰撞完畢) {
 				this.flag = BombStatus.反應完畢;
 				this.reaction();
 				this.group.remove(this.sphere);
