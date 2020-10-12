@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>標題</title>
+    <!--
+      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    -->
+    <link href="style.css" rel="stylesheet">
+</head>
+
+<body>
+    <script src="js/three.min.js"></script>
+    <script src="js/jquery-2.1.4.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/KeyboardState.js"></script>
+
+    <script src="./Saber.js"></script>
+    <script src="./Sphere.js"></script>
+    <script src="./Global.js"></script>
+    <script src="./Tail.js"></script>
+    <script>
+        var SCREEN_WIDTH = window.innerWidth;
+        var SCREEN_HEIGHT = window.innerHeight;
+        var aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+        var camera, scene, renderer;
+        var keyboard = new KeyboardState();;
+
+        var midi, audio;
+        var elapsed = 0;
+
+        var mySaber, mySpheres = [];
+
+        let pointTop = new THREE.Vector3();
+        let pointBot = new THREE.Vector3();
+        init();
+        animate();
+
+        function init() {
+
+            container = document.createElement('div');
+            document.body.appendChild(container);
+
+            // scene
+
+            scene = new THREE.Scene();
+
+            // camera
+
+            camera = new THREE.PerspectiveCamera(30, aspect, 1, 10000);
+            camera.position.set(0, 100, -100);
+
+            // renderer
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+            renderer.setClearColor(0xcce0ff);
+
+            container.appendChild(renderer.domElement);
+
+            // controls
+
+            let controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+            // grid
+
+            let gridXZ = new THREE.GridHelper(200, 20, 'red', 'black');
+            scene.add(gridXZ)
+
+            // resize
+
+            window.addEventListener('resize', onWindowResize, false);
+            mySaber = new Saber();
+
+            for (let i = 0; i < 1; i++) {
+                mySpheres.push(new Sphere());
+                let pos = randPos(50);
+                mySpheres[i].group.position.set(10,0,0);
+            }
+
+        }
+
+        function randPos(pos) {
+            return new THREE.Vector3(
+                (Math.random() * pos) - pos / 2,
+                (Math.random() * pos) - pos / 2,
+                (Math.random() * pos) - pos / 2,
+            );
+        }
+
+        function onWindowResize() {
+
+            SCREEN_WIDTH = window.innerWidth;
+            SCREEN_HEIGHT = window.innerHeight;
+
+            camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+        }
+
+        function animate() {
+            mySaber.update();
+            mySpheres.forEach((s, idx) => {
+                mySaber.dotTop.getWorldPosition(pointTop);
+                mySaber.dotBot.getWorldPosition(pointBot);
+                s.collision(pointTop, pointBot);
+                if (s.flag == BombStatus.反應完畢) {
+                    s.flag = BombStatus.紀錄完畢;
+                }
+            });
+            keyboard.update();
+            requestAnimationFrame(animate);
+            render();
+
+        }
+
+        function render() {
+
+            renderer.render(scene, camera);
+
+        }
+    </script>
+</body>
+
+</html>

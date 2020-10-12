@@ -6,7 +6,7 @@ const BombStatus = Object.freeze({
 	"紀錄完畢": 4
 })
 class Sphere {
-	constructor(time, score = 10) {
+	constructor(time = 0, score = 10) {
 		this.score = score;
 		this.group = this.makeGroup();
 		this.group.position.set(0, 0, time * TIME_SCALE);
@@ -16,8 +16,6 @@ class Sphere {
 		this.points = [];
 
 		this.style = MovingStyle.leftright;
-
-		this.calcPos = [];
 	}
 
 	makeGroup() {
@@ -69,24 +67,25 @@ class Sphere {
 			if (DistanceToSaber <= 5.0 && this.flag == BombStatus.未碰撞) {
 				this.flag = BombStatus.碰撞中;
 				this.points[0] = this.group.worldToLocal(closestPoint);
+				//再多加入一個光劍頂點位置轉到球的座標的點
+				this.points[2] = this.group.worldToLocal(pointTop.clone());
 			}
 			if (DistanceToSaber >= 5.0 && this.flag == BombStatus.碰撞中) {
 				this.flag = BombStatus.碰撞完畢;
 				this.points[1] = this.group.worldToLocal(closestPoint);
-				console.log(this.points[1]);
-				console.log(this.group.worldToLocal(closestPoint));
 			}
 			if (this.flag == BombStatus.碰撞完畢) {
 				this.flag = BombStatus.反應完畢;
 				this.reaction();
-				this.historyPos = this.sphere.position.clone();
 				this.group.remove(this.sphere);
 			}
 		}
 	}
 
 	reaction() {
+		//計算要拆分thetaLength
 		let angle = this.points[0].angleTo(this.points[1]);
+		//第1 part
 		let SpherePart1 = new THREE.Mesh(
 			// radius, widthSegments, heightSegments, phiStart, phiLength
 			// thetaStart, thetaLength
@@ -95,13 +94,14 @@ class Sphere {
 				angle / 2
 			),
 			new THREE.MeshBasicMaterial({
-				color: "white",
+				color: "red",
 				side: THREE.DoubleSide,
 				transparent: true,
 				opacity: 0.6
 			})
 		);
-		this.group.add(SpherePart1);
+
+		//第2 part
 		let SpherePart2 = new THREE.Mesh(
 			// radius, widthSegments, heightSegments, phiStart, phiLength
 			// thetaStart, thetaLength
@@ -110,12 +110,30 @@ class Sphere {
 				(2 * Math.PI - angle) / 2
 			),
 			new THREE.MeshBasicMaterial({
-				color: "black",
+				color: "blue",
 				side: THREE.DoubleSide,
 				transparent: true,
 				opacity: 0.6
 			})
 		);
+
+		//算法線向量
+		let v1 = this.points[1].clone().sub(this.points[0]);
+		let v2 = this.points[2].clone().sub(this.points[0]);
+		let rotVec = new THREE.Vector3().crossVectors(v1, v2).normalize();
+		let reverseRot = rotVec.clone().multiplyScalar(-1);
+		if (reverseRot.distanceTo(this.points[2]) < rotVec.distanceTo(this.points[2]))
+			rotVec = reverseRot;
+
+		let yAxis = new THREE.Vector3(0, 1, 0);
+		let newAxis = new THREE.Vector3();
+		newAxis.crossVectors(yAxis, rotVec).normalize();
+		let rotateAngle = yAxis.angleTo(rotVec);
+
+		SpherePart1.rotateOnWorldAxis(newAxis, rotateAngle);
+		SpherePart2.rotateOnWorldAxis(newAxis, rotateAngle);
+
+		this.group.add(SpherePart1);
 		this.group.add(SpherePart2);
 	}
 }
