@@ -16,6 +16,10 @@ let pointBot = new THREE.Vector3();
 
 var startButton = document.getElementById('startButton');
 
+var queryJson = parseQuery(document.URL.split('?')[1]);
+
+var useJoycon = queryJson.joycon === undefined ? false : true;
+
 startButton.addEventListener('click', init);
 
 function init() {
@@ -33,7 +37,7 @@ function init() {
 	// camera
 
 	camera = new THREE.PerspectiveCamera(30, aspect, 1, 10000);
-	camera.position.set(0, 200, -200);
+	camera.position.set(0, 80, -200);
 
 	// renderer
 
@@ -58,18 +62,20 @@ function init() {
 
 	// saber
 	mySaber = new Saber(scene);
-
+	mySaber.group.position.y = -10;
 	// midi
-	let CountDown = ['3', '2', '1', 'GO']
+	let waitingTime = 1;
+	let CountDown = [...Array(waitingTime).keys()].sort((a, b) => { return b - a; });
+	CountDown[CountDown.length - 1] = "GO";
 	let audioLoader = new THREE.AudioLoader();
 	let listener = new THREE.AudioListener();
-	audioLoader.load( 'test.mp3', function ( buffer ) {
-		audio = new THREE.PositionalAudio( listener );
-		audio.setBuffer( buffer );
-		let json = $.getJSON("test.json", function(data) {
+	audioLoader.load('test.mp3', function (buffer) {
+		audio = new THREE.PositionalAudio(listener);
+		audio.setBuffer(buffer);
+		let json = $.getJSON("test.json", function (data) {
 			midi = new GameCreate(data);
-			setTimeout(animate, 4000);
-			for (let i = 0; i <= 4; i++) {
+			setTimeout(animate, waitingTime * 1000);
+			for (let i = 0; i <= waitingTime; i++) {
 				(function (x) {
 					window.setTimeout(function () {
 						$("#counts").text(CountDown[x]);
@@ -125,13 +131,22 @@ function animate() {
 		});
 	}
 
-	mySaber.update();
+	mySaber.update(useJoycon);
 	ui.update();
-
 	requestAnimationFrame(animate);
 	render();
 }
 
 function render() {
 	renderer.render(scene, camera);
+}
+
+function parseQuery(queryString) {
+	var query = {};
+	var pairs = (queryString[0] === '?' ? queryString.substr(1) : queryString).split('&');
+	for (var i = 0; i < pairs.length; i++) {
+		var pair = pairs[i].split('=');
+		query[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+	}
+	return query;
 }

@@ -1,11 +1,12 @@
 class Saber {
+	static joyconHost = 'http://localhost:2222';
 	constructor() {
 		this.group = this.makeGroup();
 		scene.add(this.group);
 		// 光尾
 		this.tail = new Tail();
 	}
-	control() {
+	kbControl() {
 		keyboard.update();
 		if (keyboard.pressed("W")) {
 			this.group.position.z += 0.5;
@@ -20,11 +21,32 @@ class Saber {
 			this.group.position.x -= 0.5;
 		}
 	}
-	update() {
+	update(joycon = false) {
 		//控制
-		this.control();
+		if (joycon)
+			this.getJoyconOriented();
+		else
+			this.kbControl();
 		// 光劍更新光影(光尾)
 		this.tail.update(this.calcTailPos());
+	}
+
+	getJoyconOriented() {
+		let group = this.group;
+		$.ajax({
+			type: 'GET',
+			url: Saber.joyconHost,
+			success: function (result) {
+				let rotation = result[0].rotate;
+				group.rotation.set(rotation.X * Math.PI / 180, 0, -rotation.Y * Math.PI / 180);
+				let gyro = result[0].gyro;
+				group.position.x += gyro.Y / 2;
+				group.position.z -= gyro.Z / 2;
+			},
+			error: function (xhr, textStatus, thrownError) {
+				console.log(textStatus);
+			}
+		});
 	}
 
 	makeGroup() {
@@ -50,7 +72,7 @@ class Saber {
 					opacity: 0.6
 				})
 		);
-
+		Saber.position.y = 10;
 		return Saber;
 	}
 
