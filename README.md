@@ -6,3 +6,4 @@ Saber project
 - [Demo](https://rhy3h.github.io/SaberProject/Demo/index.html)
 - [MIDI Play](https://rhy3h.github.io/SaberProject/midiplay/index.html)
 - [CH10 Play](https://rhy3h.github.io/SaberProject/midi/index.html)
+- [Bloom](https://rhy3h.github.io/SaberProject/three.js/examples/Bloom_JS.html)
