@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Mirror</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<link type="text/css" rel="stylesheet" href="main.css">
+		<style>
+		#info > * {
+			max-width: 650px;
+			margin-left: auto;
+			margin-right: auto;
+		}
+		</style>
+	</head>
+	<body>
+
+		<div id="container"></div>
+
+		<div id="info">
+		</div>
+
+		<script type="module">
+
+			import * as THREE from '../build/three.module.js';
+
+			import Stats from './jsm/libs/stats.module.js';
+			import { GUI } from './jsm/libs/dat.gui.module.js';
+
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import { GLTFLoader } from './jsm/loaders/GLTFLoader.js';
+			import { EffectComposer } from './jsm/postprocessing/EffectComposer.js';
+			import { RenderPass } from './jsm/postprocessing/RenderPass.js';
+			import { UnrealBloomPass } from './jsm/postprocessing/UnrealBloomPass.js';
+			import { Reflector } from './jsm/objects/Reflector.js';
+
+			var camera, scene, renderer;
+			
+			var SCREEN_WIDTH = window.innerWidth;
+			var SCREEN_HEIGHT = window.innerHeight;
+			var aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+
+			var stats = new Stats();
+
+			var container = document.createElement('div');
+			document.body.appendChild(container);
+			
+			// scene
+
+			scene = new THREE.Scene();
+
+			// camera
+
+			camera = new THREE.PerspectiveCamera(30, aspect, 1, 10000);
+			camera.position.set(-350, 100, 0);
+
+			// renderer
+
+			renderer = new THREE.WebGLRenderer();
+			renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+			renderer.setClearColor(0xcce0ff);
+
+			container.appendChild(renderer.domElement);
+
+			// controls
+
+			var controls = new OrbitControls(camera, renderer.domElement);
+
+			// grid
+
+			let gridXZ = new THREE.GridHelper(200, 20, 'red', 'black');
+			//scene.add(gridXZ);
+			
+			// cubemap
+			let path = "../cubeMap/yuhi/";
+			let format = '.bmp';
+			let urls = [
+				path + 'px' + format, path + 'nx' + format,
+				path + 'py' + format, path + 'ny' + format,
+				path + 'pz' + format, path + 'nz' + format
+			];
+			let loader = new THREE.CubeTextureLoader();
+			loader.setCrossOrigin('');
+			let cubeMap = loader.load(urls);
+			cubeMap.format = THREE.RGBFormat;
+			scene.background = cubeMap;
+
+			// plane
+			let platform = new THREE.Mesh(
+				new THREE.BoxGeometry(50, 50, 50),
+				new THREE.MeshPhongMaterial({color: "red",
+					side: THREE.DoubleSide,
+					transparent: true,
+					opacity: 1
+				})
+			);
+			platform.position.y = -25;
+			scene.add( platform );
+
+			let groundMirror = new Reflector(
+				new THREE.PlaneGeometry(50, 50, 32),
+				{
+					clipBias: 0.003,
+					textureWidth: SCREEN_WIDTH * window.devicePixelRatio,
+					textureHeight: SCREEN_HEIGHT * window.devicePixelRatio,
+					color: 0x777777
+				}
+			);
+			groundMirror.position.y = 26;
+			groundMirror.rotateX( - Math.PI / 2 );
+			platform.add( groundMirror );
+
+			var cylinder1 = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.5, 0.5, 50.5, 32),
+				new THREE.MeshBasicMaterial({
+					color: "white"
+				})
+			);
+			cylinder1.position.y = 26;
+			cylinder1.position.x = 25;
+			cylinder1.rotation.x = Math.PI / 2;
+			platform.add(cylinder1);
+
+			var cylinder2 = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.5, 0.5, 50.5, 32),
+				new THREE.MeshBasicMaterial({
+					color: "white"
+				})
+			);
+			cylinder2.position.y = 26;
+			cylinder2.position.x = -25;
+			cylinder2.rotation.x = Math.PI / 2;
+			platform.add(cylinder2);
+
+			var cylinder3 = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.5, 0.5, 50.5, 32),
+				new THREE.MeshBasicMaterial({
+					color: "white"
+				})
+			);
+			cylinder3.position.y = 26;
+			cylinder3.position.z = -25;
+			cylinder3.rotation.z = Math.PI / 2;
+			platform.add(cylinder3);
+
+			var cylinder4 = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.5, 0.5, 50.5, 32),
+				new THREE.MeshBasicMaterial({
+					color: "white"
+				})
+			);
+			cylinder4.position.y = 26;
+			cylinder4.position.z = 25;
+			cylinder4.rotation.z = Math.PI / 2;
+			platform.add(cylinder4);
+
+			var saber = new THREE.Mesh(
+				new THREE.CylinderGeometry(1, 1, 30, 32),
+				new THREE.MeshBasicMaterial({
+					color: "white"
+				})
+			);
+			saber.position.y = 50;
+			scene.add(saber);
+
+			/*
+			let cube2Geo = new THREE.BoxGeometry(2500, 1, 50);
+        	let cube2Mat = new THREE.MeshPhongMaterial({color: "red",
+				side: THREE.DoubleSide,
+				transparent: true,
+				opacity: 1
+			});
+			let cube2 = new THREE.Mesh(cube2Geo, cube2Mat);
+			cube2.position.y = -1;
+			cube2.position.x = 1350;
+			scene.add( cube2 );
+			var directionalLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+			scene.add( directionalLight );
+
+			var geometry = new THREE.PlaneGeometry( 50, 50, 32 );
+			var groundMirror = new Reflector( geometry, {
+				clipBias: 0.003,
+				textureWidth: SCREEN_WIDTH * window.devicePixelRatio,
+				textureHeight: SCREEN_HEIGHT * window.devicePixelRatio,
+				color: 0x777777
+			} );
+			groundMirror.position.y = 0.5;
+			groundMirror.rotateX( - Math.PI / 2 );
+			scene.add( groundMirror );
+
+			var cylGeo = new THREE.CylinderGeometry( 1, 1, 5000, 32 );
+			var cylMat = new THREE.MeshBasicMaterial( {color: "white"} );
+			var cylinder1 = new THREE.Mesh( cylGeo, cylMat );
+			cylinder1.rotation.z = Math.PI / 2;
+			cylinder1.position.z = -50;
+			cylinder1.position.x = 2300;
+			scene.add( cylinder1 );
+			var cylinder2 = new THREE.Mesh( cylGeo, cylMat );
+			cylinder2.rotation.z = Math.PI / 2;
+			cylinder2.position.z = 50;
+			cylinder2.position.x = 2300;
+			scene.add( cylinder2 );
+			*/
+
+			animate();
+
+			window.onresize = function () {
+
+				var width = window.innerWidth;
+				var height = window.innerHeight;
+
+				camera.aspect = width / height;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( width, height );
+				composer.setSize( width, height );
+
+			};
+
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				stats.update();
+
+				renderer.render(scene, camera);
+
+			}
+
+		</script>
+
+	</body>
+
+</html>
